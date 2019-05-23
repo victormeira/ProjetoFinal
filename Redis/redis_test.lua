@@ -5,6 +5,7 @@ local response = client:get("testing")
 channels = {"t1", "t2"}
 
 spots = client:lrange("activeSpots", 0, -1)
+client:publish("t1", "TEST")
 
 for k,v in pairs(spots) do
   print(k, v)
