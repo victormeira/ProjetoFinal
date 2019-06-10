@@ -1,6 +1,11 @@
 require "arrow"
+local json  = require "json"
+local redis = require 'redis'
 
 function love.load()
+
+	-- connect to redis server
+	client = redis.connect('127.0.0.1', 6379)
 
 	-- load initial state
 	-- can be either configuration or simulation
@@ -15,15 +20,19 @@ function love.load()
 
 	for i = 0, 15 do
 		local node = {}
-		node.colorRadius   	= 55
-		node.outlineRadius 	= 62.5
-		node.posX			= ((30 + node.outlineRadius*2) * (i % 4)) + (30 + node.outlineRadius) 
-		node.posY			= ((30 + node.outlineRadius*2) * math.floor( i / 4 )) + (30 + node.outlineRadius)
-		node.currentColor   = "green"
-		node.name			= "Node " .. tostring(i + 1)
-		node.neighbors 		= {}
+		node.colorRadius   	 = 55
+		node.outlineRadius 	 = 62.5
+		node.posX			 = ((30 + node.outlineRadius*2) * (i % 4)) + (30 + node.outlineRadius) 
+		node.posY			 = ((30 + node.outlineRadius*2) * math.floor( i / 4 )) + (30 + node.outlineRadius)
+		node.currentColor    = "green"
+		node.nextColorChange = -1
+		node.name			 = "Node " .. tostring(i + 1)
+		node.neighbors 		 = {}
 
 		table.insert(nodes, node)
+
+		-- reset currentState values
+		client:del(getRedisKeyString(i + 1,"currentState"))
 	end
 
 	love.graphics.setLineWidth(4)
@@ -33,6 +42,37 @@ function love.load()
 	love.window.setMode(650, 650)
 	love.window.setTitle("Project Visualizer")
 
+end
+
+function stringIsEmpty(s)
+    return s == nil or s == ''
+end
+
+function getRedisKeyString (id, attribute)
+	return id .. ":" .. attribute
+end
+
+function love.keypressed(key, scancode, isrepeat)
+	if key == "space" then
+
+		-- sending configuration data to redis
+		for id, node in ipairs(nodes) do
+			local neighborJson = json.encode(node.neighbors)			
+			client:set(getRedisKeyString(id, "configuration"), neighborJson)
+		end
+
+		-- starting each intersection as a separate lua process
+		for id, node in ipairs(nodes) do
+			local cmd = "lua intersection.lua " .. tostring(id) .. " &"
+			os.execute(cmd)
+		end
+
+		currentState = "simulation"
+
+	elseif key=="escape" then
+		os.execute("pkill -f lua")
+		love.event.quit()
+	end
 end
 
 function mouseIsOverThisNode(node, mouseX, mouseY)
@@ -69,8 +109,8 @@ function love.mousepressed(x, y, button, istouch)
 					end
 					
 				-- in simulation a click changes node color
-				elseif 	currentState == "simulation"	then
-					v.currentColor = "red"
+				elseif 	currentState == "simulation" then
+					client:set(getRedisKeyString(i,"order"), "change")
 				end
 
 			end
@@ -79,6 +119,16 @@ function love.mousepressed(x, y, button, istouch)
  end
 
 function love.update(dt)
+	-- poll each node queue for current State
+	for id, node in ipairs(nodes) do
+		local nodeStateString = client:lpop(getRedisKeyString(id, "currentState"))
+
+		if not stringIsEmpty(nodeStateString) then
+			local nodeState = json.decode(nodeStateString)
+			node.currentColor = nodeState.color
+		end
+		
+	end
 
 end
 
@@ -103,6 +153,7 @@ end
 
 function love.draw()
 
+	love.graphics.setColor(37/255, 48/255, 49/255)
 	-- draw node connections first so they are behind the nodes
 	for _, node in ipairs(nodes) do
 		for __, neighbor in ipairs(node.neighbors) do
@@ -110,16 +161,10 @@ function love.draw()
 			love.graphics.print(neighbor.direction, node.posX - 17, node.posY + 20)
 						
 			if neighbor.direction == "in" then
-				-- draw line
-				--love.graphics.arrow(nodes[neighbor.nodeId].posX, nodes[neighbor.nodeId].posY, node.posX, node.posY, 22 , .5)
-
-				-- draw arrow tip
-				-- angle is arcsin(opposite/adjacent)
+				--drawing arrow to from neighbor node to current node
 				local lineAngle = angleBetweenNodes(node, nodes[neighbor.nodeId])
 				local arrowX, arrowY = getBorderPointForNodes(node, lineAngle)
-
-				love.graphics.arrow(nodes[neighbor.nodeId].posX, nodes[neighbor.nodeId].posY, arrowX, arrowY, 22 , .5)
-				--love.graphics.polygon("fill", triX, triY, triX - 15, triY - 15, triX + 15, triY - 15)
+				drawArrow(nodes[neighbor.nodeId].posX, nodes[neighbor.nodeId].posY, arrowX, arrowY, 22 , .5)
 			end
 		end
 	end
@@ -140,7 +185,4 @@ function love.draw()
 		love.graphics.setColor(37/255, 48/255, 49/255)
 		love.graphics.print(node.name , node.posX - 17, node.posY - 40)
 	end
-
-	love.graphics.setColor(37/255, 48/255, 49/255)
-
 end
