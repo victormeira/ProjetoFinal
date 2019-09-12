@@ -1,4 +1,5 @@
 require("vehicle")
+require("intersection")
 
 function addCarsToRoad(carsList, n)
 	local spawnedPositions = {}
@@ -20,7 +21,7 @@ function addCarsToRoad(carsList, n)
 
 		spawnedPositions[randInt] = true
 		local startingVars = possibleStartingPositions[randInt]
-		local vehi = Vehicle:new(startingVars[1], startingVars[2], math.random(10,70), math.random(10,70), startingVars[3], 'bluecar.png')
+		local vehi = Vehicle:new(startingVars[1], startingVars[2], math.random(50,120), math.random(50,120), startingVars[3], 'bluecar.png')
 		table.insert(carsList, vehi)
 	end
 end
@@ -38,9 +39,15 @@ function love.load()
 	}
 
 	math.randomseed(os.time())
-
 	carsList = {}
 	addCarsToRoad(carsList, 5)
+
+	intersectionsTable = {}
+	intersectionsTable[1] = Intersection:new(320, 260, "1")
+	intersectionsTable[2] = Intersection:new(180, 400, "1")
+	intersectionsTable[3] = Intersection:new(860, 400, "1")
+	intersectionsTable[4] = Intersection:new(720, 260, "1")
+
 
 	-- setting starting window
 	love.graphics.setBackgroundColor(237/255, 233/255, 240/255)
@@ -51,11 +58,18 @@ function love.load()
 end
 
 function love.keypressed(key, scancode, isrepeat)
-	
+
 end
 
 function love.mousepressed(x, y, button, istouch)
-	
+	if button == 1 then 
+		for k, v in pairs(intersectionsTable) do
+			if v:mouseIsAbove(x, y) then
+				print("Pressed")
+				v:orderColorChange()
+			end
+		end
+	end
 end
 
 function love.update(dt)
@@ -65,6 +79,9 @@ function love.update(dt)
 			table.remove(carsList, k)
 			addCarsToRoad(carsList, math.random(0, 3))
 		end
+	end
+	for k,v in pairs(intersectionsTable) do
+		v:checkForColorChange()
 	end
 end
 
@@ -77,6 +94,9 @@ end
 function love.draw()
 	drawBackgroundRoad()
 	for k, v in pairs(carsList) do
+		v:draw()
+	end
+	for k,v in pairs(intersectionsTable) do
 		v:draw()
 	end
 end
