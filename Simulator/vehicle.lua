@@ -1,68 +1,7 @@
 local class = require("middleclass")
+require("grid")
+
 Vehicle = class('Vehicle')
-
---[x][y] matrix saying car is contained there
---100 x 65
-local positionGrid = {}
-for i = 1,100 do
-    positionGrid[i] = {}
-    for j = 1,65 do
-        positionGrid[i][j] = false
-    end
-end
-
-function setGridValue(x,y,val)
-    if(x >= 1 and x <= 100 and y >= 1 and y <= 65) then
-        positionGrid[x][y] = val
-    end
-end
-
-function getGridValue(x,y)
-    if(x >= 1 and x <= 100 and y >= 1 and y <= 65) then
-        return positionGrid[x][y]
-    end
-    return false
-end
-
-function getGridIndex(x, y)
-    local x = math.floor(x/10) + 1
-    local y = math.floor(y/10) + 1
-
-    if(x > 100) then
-        x = 100
-    end
-    if(x < 1) then
-        x = 1
-    end
-
-    if(y > 65) then
-        y = 65
-    end
-    if(y < 1) then
-        y = 1
-    end
-
-    return x, y
-end
-
-function checkIfCanAdvance(indxX, indxY, blocks, direction)
-    return getGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks)
-end
-
-function updateGridWithCarStep(indxX, indxY, blocks, direction)
-    -- indx - blocks leaves, and indx+blocks is true
-    setGridValue(indxX - math.cos(direction)*blocks, indxY - math.sin(direction)*blocks, false)
-    setGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks, true)
-end
-
-function updateGridWithCarLeaving(indxX, indxY, blocks, direction)
-
-    --clean up all used blocks
-    for i=0, blocks do
-        setGridValue(indxX - math.cos(direction)*i, indxY - math.sin(direction)*i, false)
-        setGridValue(indxX + math.cos(direction)*i, indxY + math.sin(direction)*i, false)
-    end
-end
 
 function Vehicle:initialize (posX, posY, initSpeedX, initSpeedY, rotation, spriteImgFile)
     self.posX = posX
@@ -120,4 +59,35 @@ end
 
 function Vehicle:draw()
     love.graphics.draw(self.sprite, self.posX, self.posY, self.rotation, 0.3, 0.3, self.spriteW / 2, self.spriteH / 2)
+
+    if showGrid then
+        for i = 1,100 do
+            for j = 1,65 do
+                local xVal = (i - 1) * 10
+                local yVal = (j - 1) * 10
+                love.graphics.setColor(0,0,0)
+                love.graphics.print(i .. "," .. j, xVal, yVal)
+                love.graphics.setColor(1,1,1)
+                love.graphics.rectangle("fill", xVal, yVal, 5, 5)
+            end
+        end
+    end
+end
+
+function checkIfCanAdvance(indxX, indxY, blocks, direction)
+    return getGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks)
+end
+
+function updateGridWithCarStep(indxX, indxY, blocks, direction)
+    -- indx - blocks leaves, and indx+blocks is true
+    setGridValue(indxX - math.cos(direction)*blocks, indxY - math.sin(direction)*blocks, false)
+    setGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks, true)
+end
+
+function updateGridWithCarLeaving(indxX, indxY, blocks, direction)
+    --clean up all used blocks
+    for i=0, blocks do
+        setGridValue(indxX - math.cos(direction)*i, indxY - math.sin(direction)*i, false)
+        setGridValue(indxX + math.cos(direction)*i, indxY + math.sin(direction)*i, false)
+    end
 end

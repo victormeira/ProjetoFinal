@@ -1,10 +1,16 @@
 local class = require("middleclass")
 require("vehicle")
+require("grid")
+
 Intersection = class('intersection')
 
 function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, flowXDirection, flowYDirection, id)
 
+    self.middlePosX = middlePosX
+    self.middlePosY = middlePosY
+
     self.middlePosXGrid, self.middlePosYGrid = getGridIndex(middlePosX, middlePosY)
+    print(self.middlePosXGrid, self.middlePosYGrid)
     self.nextChange = -1
     self.id = id
     self.lightDrawingRadius = 10
@@ -12,21 +18,29 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
     -- creates a "box" of the surrouding crosswalks
     self.Crosswalks = {}
     self.Crosswalks.xAxis = {}
-    self.Crosswalks.xAxis.sameAxisPos =  self.middlePosXGrid - (flowXDirection * surroundingBlockSize/2) -- if 1, crossing is on the left
-    self.Crosswalks.xAxis.lowerLimit = self.middlePosYGrid - surroundingBlockSize/2
-    self.Crosswalks.xAxis.upperLimit = self.middlePosYGrid + surroundingBlockSize/2
+    self.Crosswalks.xAxis.sameAxisPos =  math.floor(self.middlePosXGrid - (flowXDirection * surroundingBlockSize/2)) -- if 1, crossing is on the left
+    self.Crosswalks.xAxis.lowerLimit = math.floor(self.middlePosYGrid - surroundingBlockSize/2)
+    self.Crosswalks.xAxis.upperLimit = math.ceil(self.middlePosYGrid + surroundingBlockSize/2)
     self.Crosswalks.xAxis.lightColor = "green"
     self.Crosswalks.xAxis.drawPositionX = (self.Crosswalks.xAxis.sameAxisPos - 1) * 10 
     self.Crosswalks.xAxis.drawPositionY = (self.Crosswalks.xAxis.upperLimit - 1) * 10
 
-
     self.Crosswalks.yAxis = {}
-    self.Crosswalks.yAxis.sameAxisPos =  self.middlePosYGrid - (flowYDirection * surroundingBlockSize/2) -- if 1, crossing is on the left
-    self.Crosswalks.yAxis.lowerLimit = self.middlePosXGrid - surroundingBlockSize/2
-    self.Crosswalks.yAxis.upperLimit = self.middlePosXGrid + surroundingBlockSize/2
+    self.Crosswalks.yAxis.sameAxisPos =  math.floor(self.middlePosYGrid - (flowYDirection * surroundingBlockSize/2)) -- if 1, crossing is on the left
+    self.Crosswalks.yAxis.lowerLimit = math.floor(self.middlePosXGrid - surroundingBlockSize/2)
+    self.Crosswalks.yAxis.upperLimit = math.ceil(self.middlePosXGrid + surroundingBlockSize/2)
     self.Crosswalks.yAxis.lightColor = "red"
     self.Crosswalks.yAxis.drawPositionY = (self.Crosswalks.yAxis.sameAxisPos - 1) * 10 
     self.Crosswalks.yAxis.drawPositionX = (self.Crosswalks.yAxis.upperLimit - 1) * 10
+
+    local currentXColor = self.Crosswalks.xAxis.lightColor
+    local currentYColor = self.Crosswalks.yAxis.lightColor
+
+    if(currentXColor == "red") then
+        self:setCrosswalkBlocks("x", true) -- closing the crosswalk
+    elseif (currentYColor == "red") then
+        self:setCrosswalkBlocks("y", true) -- closing the crosswalk
+    end
 
 end
 
@@ -45,24 +59,45 @@ function Intersection:draw()
     end
 
     love.graphics.setColor(1,1,1)
+    --love.graphics.circle("fill", self.middlePosX, self.middlePosY, self.lightDrawingRadius)
+
 end
 
--- TODO: 
---      Add color change ordering                           -> adding extra delay between changes (if one is green, turn to yellow and keep other; 
---                                                                                                  if yellow, turn to red and other to green)
---      Fix is mouseAbove function                          -> should iterate through crosswalks looking at drawing positions
---      Add light closing "trueing" the crosswalk blocks    -> go through upper and lower limit at sameAxisPos and true those blocks
-
+function Intersection:setCrosswalkBlocks(axis, value)
+    if axis == "x" then
+        for i = self.Crosswalks.xAxis.lowerLimit, self.Crosswalks.xAxis.upperLimit do
+            print("setting " .. self.Crosswalks.xAxis.sameAxisPos .."," .. i .. " to " .. tostring(value))
+            setGridValue(self.Crosswalks.xAxis.sameAxisPos, i, value)
+        end
+    else
+        for i = self.Crosswalks.yAxis.lowerLimit, self.Crosswalks.yAxis.upperLimit do
+            print("setting " .. i .."," .. self.Crosswalks.yAxis.sameAxisPos .. " to " .. tostring(value))
+            setGridValue(i, self.Crosswalks.yAxis.sameAxisPos, value)
+        end
+    end
+end
 
 function Intersection:orderColorChange()
-    currentColor = self.color
-    if currentColor == "red" then
-        self.color = "green"
-    elseif currentColor == "yellow" then
-        self.color = "red"
-    elseif currentColor == "green" then
-        self.color = "yellow"
-        self.nextChange = os.time() + 2
+
+    local currentXColor = self.Crosswalks.xAxis.lightColor
+    local currentYColor = self.Crosswalks.yAxis.lightColor
+
+    if(currentXColor == "green") then
+        self.Crosswalks.xAxis.lightColor = "yellow"
+        self:setCrosswalkBlocks("x", true) -- closing the crosswalk
+        self.nextChange = os.time() + 3
+    elseif (currentYColor == "green") then
+        self.Crosswalks.yAxis.lightColor = "yellow"
+        self:setCrosswalkBlocks("y", true) -- closing the crosswalk
+        self.nextChange = os.time() + 3
+    elseif (currentXColor == "yellow") then
+        self.Crosswalks.xAxis.lightColor = "red"
+        self.Crosswalks.yAxis.lightColor = "green"
+        self:setCrosswalkBlocks("y", false) -- opening the crosswalk
+    elseif (currentYColor == "yellow") then
+        self.Crosswalks.yAxis.lightColor = "red"
+        self.Crosswalks.xAxis.lightColor = "green"
+        self:setCrosswalkBlocks("x", false) -- closing the crosswalk
     end
 end
 
@@ -74,9 +109,13 @@ function Intersection:checkForColorChange()
 end
 
 function Intersection:mouseIsAbove(mouseX, mouseY)
-    local dFromCenter = math.sqrt(math.pow(mouseX - self.posX, 2) + math.pow(mouseY - self.posY, 2))
-    print(dFromCenter)
-	return dFromCenter < self.radius
+    for k,v in pairs(self.Crosswalks) do 
+        local dFromCenter = math.sqrt(math.pow(mouseX - v.drawPositionX, 2) + math.pow(mouseY - v.drawPositionY, 2))
+        if dFromCenter < self.lightDrawingRadius then
+            return true
+        end
+    end
+    return false
 end
 
 function Intersection:isClosedToPass()

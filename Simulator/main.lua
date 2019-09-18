@@ -1,5 +1,6 @@
 require("vehicle")
 require("intersection")
+require("grid")
 
 function addCarsToRoad(carsList, n)
 	local spawnedPositions = {}
@@ -28,6 +29,8 @@ end
 
 function love.load()
 
+	initializeGrid()
+
 	math.randomseed(os.time())
 	possibleStartingPositions = {
 		{-120, 305, math.rad(0)},
@@ -43,11 +46,8 @@ function love.load()
 	addCarsToRoad(carsList, 5)
 
 	intersectionsTable = {}
-	intersectionsTable[1] = Intersection:new(320, 260, "1")
-	intersectionsTable[2] = Intersection:new(180, 400, "1")
-	intersectionsTable[3] = Intersection:new(860, 400, "1")
-	intersectionsTable[4] = Intersection:new(720, 260, "1")
-
+	intersectionsTable[1] = Intersection:new(255, 325, 15, 1, 1, "1")
+	intersectionsTable[2] = Intersection:new(790, 325, 15, 1, -1, "2")
 
 	-- setting starting window
 	love.graphics.setBackgroundColor(237/255, 233/255, 240/255)
@@ -93,6 +93,7 @@ end
 
 function love.draw()
 	drawBackgroundRoad()
+	--drawGridIndices()
 	for k, v in pairs(carsList) do
 		v:draw()
 	end
