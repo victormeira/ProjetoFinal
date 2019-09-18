@@ -2,6 +2,9 @@ require("vehicle")
 require("intersection")
 require("grid")
 
+local json  = require "json"
+local redis = require 'redis'
+
 function addCarsToRoad(carsList, n)
 	local spawnedPositions = {}
 	local maxSize = table.getn(possibleStartingPositions)
@@ -46,8 +49,8 @@ function love.load()
 	addCarsToRoad(carsList, 5)
 
 	intersectionsTable = {}
-	intersectionsTable[1] = Intersection:new(255, 325, 15, 1, 1, "1")
-	intersectionsTable[2] = Intersection:new(790, 325, 15, 1, -1, "2")
+	intersectionsTable[1] = Intersection:new(255, 325, 15, 1, 1, "1", "2", "")
+	intersectionsTable[2] = Intersection:new(790, 325, 15, 1, -1, "2", "", "")
 
 	-- setting starting window
 	love.graphics.setBackgroundColor(237/255, 233/255, 240/255)
