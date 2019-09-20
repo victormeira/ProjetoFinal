@@ -114,45 +114,52 @@ function Intersection:orderColorChange()
         client:set(getRedisKeyString(self.id .. "xAxis", "color"), "yellow")
         self:setCrosswalkBlocks("x", true) -- closing the crosswalk
         self.nextChange = os.time() + 3
+        print("HERE4")
     elseif (currentYColor == "green") then
         self.Crosswalks.yAxis.lightColor = "yellow"
         client:set(getRedisKeyString(self.id .. "yAxis", "color"), "green")
         self:setCrosswalkBlocks("y", true) -- closing the crosswalk
         self.nextChange = os.time() + 3
+        print("HERE3")
     elseif (currentXColor == "yellow") then
         self.Crosswalks.xAxis.lightColor = "red"
         self.Crosswalks.yAxis.lightColor = "green"
         client:set(getRedisKeyString(self.id .. "xAxis", "color"), "red")
         client:set(getRedisKeyString(self.id .. "yAxis", "color"), "green")
         self:setCrosswalkBlocks("y", false) -- opening the crosswalk
+        print("HERE", self.Crosswalks.xAxis.lightColor)
     elseif (currentYColor == "yellow") then
         self.Crosswalks.yAxis.lightColor = "red"
         self.Crosswalks.xAxis.lightColor = "green"
         client:set(getRedisKeyString(self.id .. "xAxis", "color"), "green")
         client:set(getRedisKeyString(self.id .. "yAxis", "color"), "red")
         self:setCrosswalkBlocks("x", false) -- closing the crosswalk
+        print("HERE2")
     end
+end
+
+function strIsEqual (s1, s2)
+    return s1 == s2
 end
 
 function Intersection:checkForColorChange()
     if(self.nextChange > 0 and os.time() > self.nextChange) then
         self:orderColorChange()
         self.nextChange = -1
-    end
-
-    --TODO: Analyze better which case you should be given your interested intersection color
-
-    for k,v in pairs(self.Crosswalks) do 
-
-        if not stringIsEmpty(v.interestedIntersectionId) then
-
-            local interestedIntersectionColor = client:get(getRedisKeyString(v.interestedIntersectionId, "color"))
-            if (not stringIsEmpty(interestedIntersectionColor) and interestedIntersectionColor ~= v.lightColor and v.lightColor ~= "yellow") then
-                print("I should change!")
-                self:orderColorChange()
+    elseif(self.nextChange < 0) then
+        for k,v in pairs(self.Crosswalks) do 
+            if not stringIsEmpty(v.interestedIntersectionId) then
+                local interestedIntersectionColor = client:get(getRedisKeyString(v.interestedIntersectionId, "color"))
+                if (not stringIsEmpty(interestedIntersectionColor) and
+                    not strIsEqual(interestedIntersectionColor, v.lightColor) and not strIsEqual(v.lightColor, "yellow")) then
+                    print("I should change!")
+                    self:orderColorChange()
+                end
             end
         end
     end
+
+    --TODO: Analyze better which case you should be given your interested intersection color
 end
 
 function Intersection:mouseIsAbove(mouseX, mouseY)
