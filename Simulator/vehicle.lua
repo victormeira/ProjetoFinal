@@ -75,19 +75,19 @@ function Vehicle:draw()
 end
 
 function checkIfCanAdvance(indxX, indxY, blocks, direction)
-    return getGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks)
+    return getPositionGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks)
 end
 
 function updateGridWithCarStep(indxX, indxY, blocks, direction)
     -- indx - blocks leaves, and indx+blocks is true
-    setGridValue(indxX - math.cos(direction)*blocks, indxY - math.sin(direction)*blocks, false)
-    setGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks, true)
+    setPositionGridValue(indxX - math.cos(direction)*blocks, indxY - math.sin(direction)*blocks, false)
+    setPositionGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks, true)
 end
 
 function updateGridWithCarLeaving(indxX, indxY, blocks, direction)
     --clean up all used blocks
     for i=0, blocks do
-        setGridValue(indxX - math.cos(direction)*i, indxY - math.sin(direction)*i, false)
-        setGridValue(indxX + math.cos(direction)*i, indxY + math.sin(direction)*i, false)
+        setPositionGridValue(indxX - math.cos(direction)*i, indxY - math.sin(direction)*i, false)
+        setPositionGridValue(indxX + math.cos(direction)*i, indxY + math.sin(direction)*i, false)
     end
 end

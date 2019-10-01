@@ -3,21 +3,37 @@
 
 function initializeGrid()
     positionGrid = {}
+    turnGrid = {}
     for i = 1,100 do
         positionGrid[i] = {}
+        turnGrid[i] = {}
         for j = 1,65 do
             positionGrid[i][j] = false
+            turnGrid[i][j] = false
         end
     end
 end
 
-function setGridValue(x,y,val)
+function setTurnGridValue(x,y,val)
+    if(x >= 1 and x <= 100 and y >= 1 and y <= 65) then
+        turnGrid[x][y] = val
+    end
+end
+
+function getTurnGridValue(x,y)
+    if(x >= 1 and x <= 100 and y >= 1 and y <= 65) then
+        return turnGrid[x][y]
+    end
+    return false
+end
+
+function setPositionGridValue(x,y,val)
     if(x >= 1 and x <= 100 and y >= 1 and y <= 65) then
         positionGrid[x][y] = val
     end
 end
 
-function getGridValue(x,y)
+function getPositionGridValue(x,y)
     if(x >= 1 and x <= 100 and y >= 1 and y <= 65) then
         return positionGrid[x][y]
     end

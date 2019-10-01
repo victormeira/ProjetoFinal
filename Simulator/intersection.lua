@@ -69,6 +69,12 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
         self:setCrosswalkBlocks("y", true) -- closing the crosswalk
     end
 
+    --sets up possible places where car can turn (corners from lower to upper)
+    -- for i = self.lowerLimit
+    
+
+
+
 end
 
 function Intersection:draw()
@@ -94,12 +100,12 @@ function Intersection:setCrosswalkBlocks(axis, value)
     if axis == "x" then
         for i = self.Crosswalks.xAxis.lowerLimit, self.Crosswalks.xAxis.upperLimit do
             --print("setting " .. self.Crosswalks.xAxis.sameAxisPos .."," .. i .. " to " .. tostring(value))
-            setGridValue(self.Crosswalks.xAxis.sameAxisPos, i, value)
+            setPositionGridValue(self.Crosswalks.xAxis.sameAxisPos, i, value)
         end
     else
         for i = self.Crosswalks.yAxis.lowerLimit, self.Crosswalks.yAxis.upperLimit do
             --print("setting " .. i .."," .. self.Crosswalks.yAxis.sameAxisPos .. " to " .. tostring(value))
-            setGridValue(i, self.Crosswalks.yAxis.sameAxisPos, value)
+            setPositionGridValue(i, self.Crosswalks.yAxis.sameAxisPos, value)
         end
     end
 end
