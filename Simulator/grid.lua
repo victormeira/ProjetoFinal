@@ -9,7 +9,7 @@ function initializeGrid()
         turnGrid[i] = {}
         for j = 1,65 do
             positionGrid[i][j] = false
-            turnGrid[i][j] = false
+            turnGrid[i][j] = 5
         end
     end
 end
@@ -24,7 +24,7 @@ function getTurnGridValue(x,y)
     if(x >= 1 and x <= 100 and y >= 1 and y <= 65) then
         return turnGrid[x][y]
     end
-    return false
+    return 5
 end
 
 function setPositionGridValue(x,y,val)
@@ -70,6 +70,23 @@ function drawGridIndices()
             love.graphics.rectangle("fill", xVal, yVal, 40, 40)
             love.graphics.setColor(0,0,0)
             love.graphics.print(i*10 .. "," .. j*10, xVal, yVal)
+        end
+    end
+end
+
+
+function drawTurnBlocksIndices()
+    for i = 1,100 do
+        for j = 1, 65 do
+            
+            if turnGrid[i][j] ~= 5 then
+                local xVal = (i - 1) * 10
+                local yVal = (j - 1) * 10
+                love.graphics.setColor(122/255,24/255,220/255)
+                love.graphics.rectangle("fill", xVal, yVal, 5, 5)
+                love.graphics.setColor(0,0,0)
+                -- love.graphics.print(i .. "," .. j*10, xVal, yVal)
+            end
         end
     end
 end

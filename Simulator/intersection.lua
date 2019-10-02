@@ -69,11 +69,35 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
         self:setCrosswalkBlocks("y", true) -- closing the crosswalk
     end
 
-    --sets up possible places where car can turn (corners from lower to upper)
-    -- for i = self.lowerLimit
-    
+    --sets up possible places where car can turn (corners from lower to upper 
+    local cornerturnX = self.middlePosXGrid - math.floor(flowXDirection * (surroundingBlockSize - 7)/2)
+    local cornerturnY = self.middlePosYGrid + math.floor(flowYDirection * (surroundingBlockSize - 7)/2)
 
+    print(self.middlePosXGrid, self.middlePosYGrid)
+    print(cornerturnX, cornerturnY)
 
+    for i = self.middlePosXGrid - flowXDirection * 2, cornerturnX, -1 * flowXDirection do
+        for j = self.middlePosYGrid + flowYDirection * 2, cornerturnY, flowYDirection do
+            local gridVal = math.rad(0)
+            if flowXDirection == -1 then
+                math.rad(180)
+            end
+            setTurnGridValue(i, j, gridVal)
+        end
+    end
+
+    cornerturnX = self.middlePosXGrid + math.floor(flowXDirection * (surroundingBlockSize - 7)/2)
+    cornerturnY = self.middlePosYGrid - math.floor(flowYDirection * (surroundingBlockSize - 7)/2)
+
+    for i = self.middlePosXGrid + flowXDirection * 2 , cornerturnX, flowXDirection do
+        for j = self.middlePosYGrid - flowYDirection * 2, cornerturnY, -1 * flowYDirection do
+            local gridVal = math.rad(270)
+            if flowYDirection == -1 then
+                math.rad(90)
+            end
+            setTurnGridValue(i, j, gridVal)
+        end
+    end
 
 end
 
@@ -139,7 +163,7 @@ function Intersection:orderColorChange()
         self.Crosswalks.xAxis.lightColor = "green"
         client:set(getRedisKeyString(self.id .. "xAxis", "color"), "green")
         client:set(getRedisKeyString(self.id .. "yAxis", "color"), "red")
-        self:setCrosswalkBlocks("x", false) -- closing the crosswalk
+        self:setCrosswalkBlocks("x", false) -- opening the crosswalk
         print("HERE2")
     end
 end

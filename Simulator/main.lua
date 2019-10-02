@@ -97,6 +97,7 @@ end
 function love.draw()
 	drawBackgroundRoad()
 	--drawGridIndices()
+	drawTurnBlocksIndices()
 	for k, v in pairs(carsList) do
 		v:draw()
 	end

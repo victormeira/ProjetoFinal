@@ -24,9 +24,16 @@ function Vehicle:moveAStep(dt)
     local nextXIndx, nextYIndx = getGridIndex(nextX, nextY)
     local currXIndx, currYIndx = getGridIndex(self.posX, self.posY)
 
-    -- checks if I can move to next grid position
-    if(not(nextXIndx == currXIndx and nextYIndx == currYIndx)) then
-        if(checkIfCanAdvance(nextXIndx, nextYIndx, 4, self.rotation)) then
+    -- checks if I can move to next grid position by checking if I have changed gridIndex
+    if not(nextXIndx == currXIndx and nextYIndx == currYIndx)  then
+
+        local shouldTurnRotation = shouldTurn(nextXIndx, nextYIndx, 4, self.rotation) 
+        if shouldTurnRotation ~= 5 then
+            print("Someone turned!")
+            self.rotation = shouldTurnRotation
+        end
+
+        if checkIfCanAdvance(nextXIndx, nextYIndx, 4, self.rotation)  then
             --print("someone in grid!")
             return true
         else
@@ -72,6 +79,18 @@ function Vehicle:draw()
             end
         end
     end
+end
+
+function shouldTurn(indxX, indxY, blocks, direction)
+    local val = getTurnGridValue(indxX + math.cos(direction)*blocks, indxY + math.sin(direction)*blocks)
+    if val ~= 5 then
+        print("Someone could turn")
+        local randInt = math.random(0,2)
+        if randInt == 1 then
+            return val
+        end
+    end
+    return 5
 end
 
 function checkIfCanAdvance(indxX, indxY, blocks, direction)
