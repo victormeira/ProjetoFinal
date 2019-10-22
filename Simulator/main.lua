@@ -46,7 +46,7 @@ function love.load()
 
 	math.randomseed(os.time())
 	carsList = {}
-	addCarsToRoad(carsList, 5)
+	addCarsToRoad(carsList, 3)
 
 	intersectionsTable = {}
 	intersectionsTable[1] = Intersection:new(255, 325, 15, 1, 1, "1", "2", "")
@@ -80,15 +80,17 @@ function love.update(dt)
 		-- if object is no longer in screen
 		if(not v:moveAStep(dt)) then
 			table.remove(carsList, k)
-			addCarsToRoad(carsList, math.random(0, 3))
+			addCarsToRoad(carsList, math.random(3, 5))
 		end
 	end
 	for k,v in pairs(intersectionsTable) do
 		v:checkForColorChange()
+		v:reaffirmClosedCrosswalk()
 	end
 end
 
 function drawBackgroundRoad()
+	love.graphics.setColor(1,1,1)
 	local sx = love.graphics.getWidth() / roadBackground:getWidth()
 	local sy = love.graphics.getHeight() / roadBackground:getHeight()
 	love.graphics.draw(roadBackground, 0, 0, 0, sx, sy)
@@ -96,12 +98,12 @@ end
 
 function love.draw()
 	drawBackgroundRoad()
-	--drawGridIndices()
-	drawTurnBlocksIndices()
+	--drawTurnBlocksIndices()
 	for k, v in pairs(carsList) do
 		v:draw()
 	end
 	for k,v in pairs(intersectionsTable) do
 		v:draw()
 	end
+	drawGridIndices()
 end

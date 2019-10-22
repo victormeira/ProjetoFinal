@@ -42,6 +42,7 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
     else
         self.Crosswalks.xAxis.interestedIntersectionId = nextXAxisId .. "xAxis"
     end
+    self.Crosswalks.xAxis.reaffirmClosedCrosswalk = false
     print(self.Crosswalks.xAxis.interestedIntersectionId)
     client:set(getRedisKeyString(id .. "xAxis", "color"), "green")
 
@@ -57,6 +58,7 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
     else
         self.Crosswalks.yAxis.interestedIntersectionId = nextYAxisId .. "yAxis"
     end
+    self.Crosswalks.yAxis.reaffirmClosedCrosswalk = false
     print(self.Crosswalks.yAxis.interestedIntersectionId)
     client:set(getRedisKeyString(id .. "yAxis", "color"), "red")
 
@@ -73,15 +75,13 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
     local cornerturnX = self.middlePosXGrid - math.floor(flowXDirection * (surroundingBlockSize - 7)/2)
     local cornerturnY = self.middlePosYGrid + math.floor(flowYDirection * (surroundingBlockSize - 7)/2)
 
-    print(self.middlePosXGrid, self.middlePosYGrid)
-    print(cornerturnX, cornerturnY)
-
     for i = self.middlePosXGrid - flowXDirection * 2, cornerturnX, -1 * flowXDirection do
         for j = self.middlePosYGrid + flowYDirection * 2, cornerturnY, flowYDirection do
-            local gridVal = math.rad(0)
-            if flowXDirection == -1 then
-                math.rad(180)
+            local gridVal = math.rad(90)
+            if flowYDirection == -1 then
+                gridVal = math.rad(270)
             end
+            print(i, j, gridVal)
             setTurnGridValue(i, j, gridVal)
         end
     end
@@ -91,10 +91,11 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
 
     for i = self.middlePosXGrid + flowXDirection * 2 , cornerturnX, flowXDirection do
         for j = self.middlePosYGrid - flowYDirection * 2, cornerturnY, -1 * flowYDirection do
-            local gridVal = math.rad(270)
-            if flowYDirection == -1 then
-                math.rad(90)
+            local gridVal = math.rad(0)
+            if flowXDirection == -1 then
+                gridVal = math.rad(180)
             end
+            print(i, j, gridVal)
             setTurnGridValue(i, j, gridVal)
         end
     end
@@ -122,13 +123,56 @@ end
 
 function Intersection:setCrosswalkBlocks(axis, value)
     if axis == "x" then
+        self.Crosswalks.xAxis.reaffirmClosedCrosswalk = false;
         for i = self.Crosswalks.xAxis.lowerLimit, self.Crosswalks.xAxis.upperLimit do
             --print("setting " .. self.Crosswalks.xAxis.sameAxisPos .."," .. i .. " to " .. tostring(value))
+            if(getPositionGridValue(self.Crosswalks.xAxis.sameAxisPos, i) and value == true) then
+                self.Crosswalks.xAxis.reaffirmClosedCrosswalk = true;
+            end
             setPositionGridValue(self.Crosswalks.xAxis.sameAxisPos, i, value)
         end
     else
+        self.Crosswalks.yAxis.reaffirmClosedCrosswalk = false;
         for i = self.Crosswalks.yAxis.lowerLimit, self.Crosswalks.yAxis.upperLimit do
             --print("setting " .. i .."," .. self.Crosswalks.yAxis.sameAxisPos .. " to " .. tostring(value))
+            if(getPositionGridValue(i, self.Crosswalks.yAxis.sameAxisPos) and value == true) then
+                self.Crosswalks.yAxis.reaffirmClosedCrosswalk = true;
+                print("should reaffirm y")
+            end
+            setPositionGridValue(i, self.Crosswalks.yAxis.sameAxisPos, value)
+        end
+    end
+end
+
+function Intersection:reaffirmClosedCrosswalk()
+    if(self.Crosswalks.xAxis.reaffirmClosedCrosswalk) then
+        --print("reaffirming x")
+        self:fillInEmptyGridBlocks("x", true)
+    end
+    if (self.Crosswalks.yAxis.reaffirmClosedCrosswalk) then
+        print("reaffirming y")
+        self:fillInEmptyGridBlocks("y", true)
+    end
+end
+
+function Intersection:fillInEmptyGridBlocks(axis, value)
+    if axis == "x" then
+        for i = self.Crosswalks.xAxis.lowerLimit, self.Crosswalks.xAxis.upperLimit do
+            
+            -- if empty gridPos means we can reaffirm it now
+            if(not getPositionGridValue(self.Crosswalks.xAxis.sameAxisPos, i)) then
+                self.Crosswalks.xAxis.reaffirmClosedCrosswalk = false;
+                setPositionGridValue(self.Crosswalks.xAxis.sameAxisPos, i, value)
+            end
+        end
+    else
+        for i = self.Crosswalks.yAxis.lowerLimit, self.Crosswalks.yAxis.upperLimit do
+
+            -- if empty gridPos means we can reaffirm it now
+            if(not getPositionGridValue(i, self.Crosswalks.yAxis.sameAxisPos)) then
+                print("falsing!")
+                self.Crosswalks.yAxis.reaffirmClosedCrosswalk = false;
+            end
             setPositionGridValue(i, self.Crosswalks.yAxis.sameAxisPos, value)
         end
     end
