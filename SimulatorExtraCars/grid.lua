@@ -74,6 +74,8 @@ function drawGridIndices()
 
             if(getPositionGridValue(i,j)) then
                 love.graphics.setColor(1,0,0)           
+            elseif(getTurnGridValue(i,j) ~= 5) then
+                love.graphics.setColor(0,0,1)           
             else
                 love.graphics.setColor(0,1,0)
             end
@@ -85,7 +87,7 @@ function drawGridIndices()
 end
 
 function cleanUpGridBorders()
-    print("Cleaning up!!")
+    --print("Cleaning up!!")
     for i = LOWER_X_INDX, 0 do
         for j = LOWER_Y_INDX, HIGHER_Y_INDX do
             setPositionGridValue(i, j, false)
@@ -123,6 +125,21 @@ function drawTurnBlocksIndices()
                 love.graphics.rectangle("fill", xVal, yVal, 5, 5)
                 love.graphics.setColor(0,0,0)
                 -- love.graphics.print(i .. "," .. j*10, xVal, yVal)
+            end
+        end
+    end
+end
+
+function drawGridBlocks(showGrid)
+    if showGrid then
+        for i = 1,100 do
+            for j = 1,65 do
+                local xVal = (i - 1) * 10
+                local yVal = (j - 1) * 10
+                love.graphics.setColor(0,0,0)
+                love.graphics.print(i .. "," .. j, xVal, yVal)
+                love.graphics.setColor(1,1,1)
+                love.graphics.rectangle("fill", xVal, yVal, 5, 5)
             end
         end
     end
