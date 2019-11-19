@@ -67,16 +67,18 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
 
     if(currentXColor == "red") then
         self:setCrosswalkBlocks("x", true) -- closing the crosswalk
+        self.Crosswalks.xAxis.reaffirmClosedCrosswalk = true
     elseif (currentYColor == "red") then
         self:setCrosswalkBlocks("y", true) -- closing the crosswalk
+        self.Crosswalks.yAxis.reaffirmClosedCrosswalk = true
     end
 
     --sets up possible places where car can turn (corners from lower to upper 
     local cornerturnX = self.middlePosXGrid - math.floor(flowXDirection * (surroundingBlockSize - 7)/2)
     local cornerturnY = self.middlePosYGrid + math.floor(flowYDirection * (surroundingBlockSize - 7)/2)
 
-    for i = self.middlePosXGrid - flowXDirection * 2, cornerturnX, -1 * flowXDirection do
-        for j = self.middlePosYGrid + flowYDirection * 2, cornerturnY, flowYDirection do
+    for i = self.middlePosXGrid - flowXDirection, cornerturnX, -1 * flowXDirection do
+        for j = self.middlePosYGrid + flowYDirection, cornerturnY, flowYDirection do
             local gridVal = math.rad(90)
             if flowYDirection == -1 then
                 gridVal = math.rad(270)
@@ -89,8 +91,8 @@ function Intersection:initialize (middlePosX, middlePosY, surroundingBlockSize, 
     cornerturnX = self.middlePosXGrid + math.floor(flowXDirection * (surroundingBlockSize - 7)/2)
     cornerturnY = self.middlePosYGrid - math.floor(flowYDirection * (surroundingBlockSize - 7)/2)
 
-    for i = self.middlePosXGrid + flowXDirection * 2 , cornerturnX, flowXDirection do
-        for j = self.middlePosYGrid - flowYDirection * 2, cornerturnY, -1 * flowYDirection do
+    for i = self.middlePosXGrid + flowXDirection , cornerturnX, flowXDirection do
+        for j = self.middlePosYGrid - flowYDirection, cornerturnY, -1 * flowYDirection do
             local gridVal = math.rad(0)
             if flowXDirection == -1 then
                 gridVal = math.rad(180)
@@ -137,7 +139,7 @@ function Intersection:setCrosswalkBlocks(axis, value)
             --print("setting " .. i .."," .. self.Crosswalks.yAxis.sameAxisPos .. " to " .. tostring(value))
             if(getPositionGridValue(i, self.Crosswalks.yAxis.sameAxisPos) and value == true) then
                 self.Crosswalks.yAxis.reaffirmClosedCrosswalk = true;
-                print("should reaffirm y")
+                --print("should reaffirm y")
             end
             setPositionGridValue(i, self.Crosswalks.yAxis.sameAxisPos, value)
         end
@@ -147,11 +149,11 @@ end
 function Intersection:reaffirmClosedCrosswalk()
     if(self.Crosswalks.xAxis.reaffirmClosedCrosswalk) then
         --print("reaffirming x")
-        self:fillInEmptyGridBlocks("x", true)
+        self:setCrosswalkBlocks("x", true)
     end
     if (self.Crosswalks.yAxis.reaffirmClosedCrosswalk) then
         --print("reaffirming y")
-        self:fillInEmptyGridBlocks("y", true)
+        self:setCrosswalkBlocks("y", true)
     end
 end
 
@@ -187,28 +189,32 @@ function Intersection:orderColorChange()
         self.Crosswalks.xAxis.lightColor = "yellow"
         client:set(getRedisKeyString(self.id .. "xAxis", "color"), "yellow")
         self:setCrosswalkBlocks("x", true) -- closing the crosswalk
-        self.nextChange = os.time() + 3
-        print("HERE4")
+        --self.nextChange = os.time() + 3
+        self.Crosswalks.xAxis.reaffirmClosedCrosswalk = true
+        --print("HERE4")
     elseif (currentYColor == "green") then
         self.Crosswalks.yAxis.lightColor = "yellow"
         client:set(getRedisKeyString(self.id .. "yAxis", "color"), "green")
         self:setCrosswalkBlocks("y", true) -- closing the crosswalk
-        self.nextChange = os.time() + 3
-        print("HERE3")
+        --self.nextChange = os.time() + 3
+        self.Crosswalks.yAxis.reaffirmClosedCrosswalk = true
+        --print("HERE3")
     elseif (currentXColor == "yellow") then
         self.Crosswalks.xAxis.lightColor = "red"
         self.Crosswalks.yAxis.lightColor = "green"
         client:set(getRedisKeyString(self.id .. "xAxis", "color"), "red")
         client:set(getRedisKeyString(self.id .. "yAxis", "color"), "green")
         self:setCrosswalkBlocks("y", false) -- opening the crosswalk
-        print("HERE", self.Crosswalks.xAxis.lightColor)
+        self.Crosswalks.yAxis.reaffirmClosedCrosswalk = false
+        --print("HERE", self.Crosswalks.xAxis.lightColor)
     elseif (currentYColor == "yellow") then
         self.Crosswalks.yAxis.lightColor = "red"
         self.Crosswalks.xAxis.lightColor = "green"
         client:set(getRedisKeyString(self.id .. "xAxis", "color"), "green")
         client:set(getRedisKeyString(self.id .. "yAxis", "color"), "red")
         self:setCrosswalkBlocks("x", false) -- opening the crosswalk
-        print("HERE2")
+        self.Crosswalks.xAxis.reaffirmClosedCrosswalk = false
+        --print("HERE2")
     end
 end
 
@@ -217,19 +223,13 @@ function strIsEqual (s1, s2)
 end
 
 function Intersection:checkForColorChange()
-    if(self.nextChange > 0 and os.time() > self.nextChange) then
-        self:orderColorChange()
-        self.nextChange = -1
-    elseif(self.nextChange < 0) then
-        for k,v in pairs(self.Crosswalks) do 
-            if not stringIsEmpty(v.interestedIntersectionId) then
-                local interestedIntersectionColor = client:get(getRedisKeyString(v.interestedIntersectionId, "color"))
-                if (not stringIsEmpty(interestedIntersectionColor) and
-                    not strIsEqual(interestedIntersectionColor, v.lightColor) and not strIsEqual(v.lightColor, "yellow")) then
-                    print("I should change!")
-                    self:orderColorChange()
-                end
-            end
+
+    for k,v in pairs(self.Crosswalks) do 
+        local currentColorInRedis = client:get(getRedisKeyString(self.id..k, "color"))
+
+        if(not strIsEqual(v.lightColor, currentColorInRedis)) then
+            --print("I should change!")
+            self:orderColorChange()
         end
     end
 

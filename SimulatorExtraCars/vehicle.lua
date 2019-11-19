@@ -30,24 +30,22 @@ function Vehicle:moveAStep(dt)
     -- checks if I can move to next grid position by checking if I have changed gridIndex
     if not(nextXIndx == currXIndx and nextYIndx == currYIndx) then
 
-        local shouldTurnRotation = shouldTurn(nextXIndx, nextYIndx, 1, self.rotation) 
-        if shouldTurnRotation ~= 5 and shouldTurnRotation ~= self.rotation then
-            print("Someone turned rotation:" .. shouldTurnRotation)
-            --cleanup the grid
-            cleanUpCarGrid(nextXIndx, nextYIndx, 1, self.rotation)        
-            self.rotation = shouldTurnRotation
-
-            occupyCarGrid(nextXIndx, nextYIndx, 1, self.rotation)  
-        end
-
         if checkIfCanAdvance(nextXIndx, nextYIndx, 1, self.rotation)  then
-            if self.rotation == 0 then print("someone in grid!") end
             return true
         else
             -- print("changing grid pos")
             -- change grid positions
             updateGridWithCarStep(nextXIndx, nextYIndx, 1, self.rotation)
         end 
+
+        local shouldTurnRotation = shouldTurn(nextXIndx, nextYIndx, 1, self.rotation) 
+        if shouldTurnRotation ~= 5 and shouldTurnRotation ~= self.rotation then
+            --cleanup the grid
+            cleanUpCarGrid(nextXIndx, nextYIndx, 1, self.rotation)        
+            self.rotation = shouldTurnRotation
+
+            occupyCarGrid(nextXIndx, nextYIndx, 1, self.rotation)  
+        end
     end
 
     -- if is currently in screen
@@ -76,19 +74,6 @@ end
 function Vehicle:draw()
     love.graphics.setColor(1,1,1)
     love.graphics.circle("fill", self.posX, self.posY, 3, 30)
-
-    if showGrid then
-        for i = 1,100 do
-            for j = 1,65 do
-                local xVal = (i - 1) * 10
-                local yVal = (j - 1) * 10
-                love.graphics.setColor(0,0,0)
-                love.graphics.print(i .. "," .. j, xVal, yVal)
-                love.graphics.setColor(1,1,1)
-                love.graphics.rectangle("fill", xVal, yVal, 5, 5)
-            end
-        end
-    end
 end
 
 function Vehicle:totalTimeInScreen()
@@ -96,12 +81,9 @@ function Vehicle:totalTimeInScreen()
 end
 
 function shouldTurn(indxX, indxY, blocks, direction)
-    -- gets the midVal for the turn
-    --local val = getTurnGridValue(indxX + math.cos(direction)*(-2) , indxY + math.sin(direction)*(-2))
-    local val = 5
+    local val = getTurnGridValue(indxX, indxY)
     if val ~= 5 then
-        --print("Someone could turn")
-        local randInt = math.random(0,20)
+        local randInt = math.random(0,10)
         if randInt == 1 then
             return val
         end
@@ -124,6 +106,7 @@ end
 
 function cleanUpCarGrid(indxX, indxY, blocks, direction)
     --clean up all used blocks
+    setPositionGridValue(indxX, indxY, false)
     setPositionGridValue(indxX - math.cos(direction)*1, indxY - math.sin(direction)*1, false)
     setPositionGridValue(indxX - math.cos(direction)*2, indxY - math.sin(direction)*2, false)
     setPositionGridValue(indxX + math.cos(direction)*1, indxY + math.sin(direction)*1, false)

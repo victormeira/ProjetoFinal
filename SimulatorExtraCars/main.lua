@@ -5,7 +5,7 @@ require("grid")
 local json  = require "json"
 local redis = require 'redis'
 
-local testType = "SYSTEM"
+local testType = "300CARS1TO10-TIME"
 
 function addCarsToRoad(carsList, n)
 	local spawnedPositions = {}
@@ -117,9 +117,9 @@ function love.update(dt)
 		if(not v:moveAStep(dt)) then
 			
 			io.write(v:totalTimeInScreen() .. "\n")
-            print("Vehicle has left!")			
+            --print("Vehicle has left!")			
 			table.remove(carsList, k)
-			addCarsToRoad(carsList, math.random(1, 3))
+			addCarsToRoad(carsList, math.random(1, 10))
 		end
 	end
 	for k,v in pairs(intersectionsTable) do

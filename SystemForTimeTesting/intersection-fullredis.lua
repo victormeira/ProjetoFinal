@@ -67,26 +67,11 @@ local configurationObj = json.encode(client:get(joinTwoStrings(myId,"configurati
 print(configurationObj.NeighboringIds)
 local neighborIds = configurationObj.NeighboringIds
 
--- building syncObj to be used for syncing
-local currentSyncObj = {}
-
-for cardinalKey, cardinalValue in pairs(configurationObj.Configuration) do
-  currentSyncObj[cardinalKey] = {}
-
-  for directionKey, directionValue in pairs(cardinalValue) do
-    if (directionValue ~= nil) then
-      if (directionValue.TrafficLight) then
-        currentSyncObj[cardinalKey][directionKey] = {}
-        currentSyncObj[cardinalKey][directionKey].CurrentState    = "red"
-        currentSyncObj[cardinalKey][directionKey].RedInterval     = directionValue.Intervals.RedInterval
-        currentSyncObj[cardinalKey][directionKey].YellowInterval  = directionValue.Intervals.YellowInterval
-        currentSyncObj[cardinalKey][directionKey].GreenInterval   = directionValue.Intervals.GreenInterval
-        currentSyncObj[cardinalKey][directionKey].LastStateUpdate = 0
-        currentSyncObj[cardinalKey][directionKey].PredictedNextStateUpdate = 0
-      end
-    end
-  end
-end
+-- deals with xAxis
+local syncObj = {}
+syncObj.CurrentState = "green"
+syncObj.LastStateUpdate = 0
+syncObj.NextStateUpdate = 0
 
 while true do
 
@@ -96,32 +81,31 @@ while true do
     client:lpush("activeSpots", myId);
   end
 
-  for key, value in pairs(configurationObj.Configuration) do  
-    --read from Sensors
-    local stoppedCars, passedCars, numberOfPedestrians = readSensorData()
+  --read from Sensors
+  local stoppedCars, passedCars, numberOfPedestrians = readSensorData()
 
-    -- read from Historic Data
-    local history = client:get(joinTwoStrings(myId,"history", ":"))
+  -- read from Historic Data
+  local history = client:get(joinTwoStrings(myId,"history", ":"))
 
-    -- read from orders
-    local orders = receiveOrders()
+  -- read from orders
+  local orders = receiveOrders()
 
-    -- read sync from neighbors
-    local syncTime = 1
-    for i, nodeId in ipairs(neighborIds) do
-      syncTime = client:get(joinTwoStrings(nodeId,"sync", ":"))
-      print("Got sync " .. syncTime .. " from node " .. nodeId)
-    end
-
-    -- CALCULATION OF NEW VARIABLES
-    local weight = tonumber(history) + 1
+  -- read sync from neighbors
+  local syncTime = 1
+  local neighborSyncObjs = {}
+  for i, nodeId in ipairs(neighborIds) do
+    neighborSyncObjs[i] = json.decode(client:get(joinTwoStrings(nodeId,"sync", ":")))
   end
+
+  local currentState, nextSwitch = intersectionHeuristic (passedCars, stoppedCars, numberOfPedestrians, syncObj.NextStateUpdate, neighborSyncObjs[0].NextStateUpdate, syncObj.CurrentState, socket.gettime(), 60000)
+
+  -- set values to simulation
 
   -- update current Log
   client:lpush(joinTwoStrings(myId, "currentLog", ":"), weight)
 
   -- update sync object
-  client:set(joinTwoStrings(myId,"sync", ":"), weight)
+  client:set(joinTwoStrings(myId,"sync", ":"), json.encode(syncObj))
 
   -- update updates for agregator
   client:lpush(joinTwoStrings(myId, "updates", ":"),weight)
