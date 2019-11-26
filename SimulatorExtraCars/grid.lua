@@ -86,6 +86,24 @@ function drawGridIndices()
     end
 end
 
+function getNumberOfCars(minXPos, maxXPos, minYPos, maxYPos)
+    local minXIndx = math.floor(minXPos/10) + 1
+    local maxXIndx = math.floor(maxXPos/10) + 1
+    local minYIndx = math.floor(minYPos/10) + 1
+    local maxYIndx = math.floor(maxYPos/10) + 1
+
+    local carCount = 0
+    for i = minXIndx, maxXIndx do
+        for j = minYIndx, maxYIndx do
+            if getPositionGridValue(i,j) then
+                carCount = carCount + 1
+            end
+        end
+    end
+
+    return carCount
+end
+
 function cleanUpGridBorders()
     --print("Cleaning up!!")
     for i = LOWER_X_INDX, 0 do

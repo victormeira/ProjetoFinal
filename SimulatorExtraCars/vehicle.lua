@@ -4,7 +4,7 @@ require("grid")
 
 Vehicle = class('Vehicle')
 
-function Vehicle:initialize (posX, posY, initSpeedX, initSpeedY, rotation, spriteImgFile)
+function Vehicle:initialize (posX, posY, initSpeedX, initSpeedY, rotation, spriteImgFile, startingPositionId)
     self.posX = posX
     self.posY = posY
     self.speedX = initSpeedX
@@ -16,6 +16,13 @@ function Vehicle:initialize (posX, posY, initSpeedX, initSpeedY, rotation, sprit
     self.hasAppearedInScreen = false
     self.firstTimeInScreen = 0
     self.lastTimeInScreen = 0
+    self.color = {
+        math.random( 0,255) / 255,
+        math.random( 0,255) / 255,
+        math.random( 0,255) / 255,
+    }
+    self.numberOfTurns = 0
+    self.startingPositionId = startingPositionId
 end
 
 function Vehicle:moveAStep(dt)
@@ -43,8 +50,8 @@ function Vehicle:moveAStep(dt)
             --cleanup the grid
             cleanUpCarGrid(nextXIndx, nextYIndx, 1, self.rotation)        
             self.rotation = shouldTurnRotation
-
             occupyCarGrid(nextXIndx, nextYIndx, 1, self.rotation)  
+            self.numberOfTurns = self.numberOfTurns + 1
         end
     end
 
@@ -72,12 +79,12 @@ function Vehicle:moveAStep(dt)
 end
 
 function Vehicle:draw()
-    love.graphics.setColor(1,1,1)
+    love.graphics.setColor(self.color[1], self.color[2], self.color[3])
     love.graphics.circle("fill", self.posX, self.posY, 3, 30)
 end
 
-function Vehicle:totalTimeInScreen()
-    return self.lastTimeInScreen - self.firstTimeInScreen
+function Vehicle:statistics()
+    return self.lastTimeInScreen - self.firstTimeInScreen .. "\t" .. self.numberOfTurns .. "\t" .. self.startingPositionId
 end
 
 function shouldTurn(indxX, indxY, blocks, direction)

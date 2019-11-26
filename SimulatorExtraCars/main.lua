@@ -4,8 +4,9 @@ require("grid")
 
 local json  = require "json"
 local redis = require 'redis'
+local socket = require 'socket'
 
-local testType = "300CARS1TO10-TIME"
+local testType = "50CARS_N"
 
 function addCarsToRoad(carsList, n)
 	local spawnedPositions = {}
@@ -18,7 +19,7 @@ function addCarsToRoad(carsList, n)
 		spawnedPositions[i] = false
 	end
 
-	local maxCarsInRoad = 300
+	local maxCarsInRoad = 50
 	local numCarsInRoad = table.getn(carsList)
 	
 	-- over max num of cars
@@ -40,7 +41,7 @@ function addCarsToRoad(carsList, n)
 
 		spawnedPositions[randInt] = true
 		local startingVars = possibleStartingPositions[randInt]
-		local vehi = Vehicle:new(startingVars[1], startingVars[2], math.random(50,120), math.random(50,120), startingVars[3], 'bluecar.png')
+		local vehi = Vehicle:new(startingVars[1], startingVars[2], math.random(50,120), math.random(50,120), startingVars[3], 'bluecar.png', startingVars[4])
 		table.insert(carsList, vehi)
 	end
 end
@@ -50,31 +51,16 @@ function love.load()
 	initializeGrid()
 
 	math.randomseed(os.time())
-	possibleStartingPositions = {
-		{-120, 295, math.rad(0)},
-		{-120, 305, math.rad(0)},
-		{-120, 315, math.rad(0)},
-		{-120, 325, math.rad(0)},	
-		{-120, 335, math.rad(0)},
-		{-120, 345, math.rad(0)},	
-		{-120, 355, math.rad(0)},	
-		{215, -120, math.rad(90)},		
-		{225, -120, math.rad(90)},		
-		{235, -120, math.rad(90)},		
-		{245, -120, math.rad(90)},		
-		{265, -120, math.rad(90)},		
-		{275, -120, math.rad(90)},
-		{285, -120, math.rad(90)},		
-		{750, 800, math.rad(270)},
-		{760, 800, math.rad(270)},
-		{770, 800, math.rad(270)},
-		{780, 800, math.rad(270)},
-		{790, 800, math.rad(270)},
-		{800, 800, math.rad(270)},
-		{810, 800, math.rad(270)},
-		{820, 800, math.rad(270)},
-		{830, 800, math.rad(270)},
-	}
+
+	local listIndex = 1
+
+	possibleStartingPositions = {}
+	for i = 1, 9 do
+		table.insert( possibleStartingPositions, {-120, 285 + (i-1)*10 , math.rad(0), "1"})
+		table.insert( possibleStartingPositions, {215 + (i-1)*10, -120, math.rad(90), "2"})
+		table.insert( possibleStartingPositions, {750 + (i-1)*10, 800, math.rad(270), "3"})
+	end
+
 	math.randomseed(os.time())
 	carsList = {}
 	addCarsToRoad(carsList, 15)
@@ -89,11 +75,18 @@ function love.load()
 	love.window.setTitle("Project Simulator")
 	roadBackground = love.graphics.newImage('intersectionbackground.png')
 
-	outputTimesFiles = io.open("vehicle_times".. testType ..".txt", "a")
+	outputTimesFiles = io.open("testOutputs/vehicle_times".. testType ..".txt", "a")
 	io.output(outputTimesFiles)
 
-	io.write("---- New test begins")
+	io.write("---- New test begins\n")
 
+	intersectionPositionsForCounting = {
+		{"1xAxis", 0  , 160, 280, 370},
+		{"1yAxis", 210, 295, 0  , 230},
+		{"2xAxis", 300, 690, 280, 370},
+		{"2yAxis", 740, 840, 440, 650}
+	}
+	carCounterStopWatch = socket.gettime() + 10
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -115,16 +108,25 @@ function love.update(dt)
 	for k, v in pairs(carsList) do
 		-- if object is no longer in screen
 		if(not v:moveAStep(dt)) then
-			
-			io.write(v:totalTimeInScreen() .. "\n")
+			time = os.date("*t")
+			timeString = ("%02d:%02d:%02d"):format(time.hour, time.min, time.sec)
+			io.write(timeString .. "\t" .. v:statistics() .. "\n")
             --print("Vehicle has left!")			
 			table.remove(carsList, k)
-			addCarsToRoad(carsList, math.random(1, 10))
+			addCarsToRoad(carsList, math.random(5, 15))
 		end
 	end
 	for k,v in pairs(intersectionsTable) do
 		v:checkForColorChange()
 		v:reaffirmClosedCrosswalk()
+	end
+
+	if carCounterStopWatch > socket.gettime() then
+		for k,v in pairs(intersectionPositionsForCounting) do
+			local carAmount = getNumberOfCars(v[2], v[3], v[4], v[5])
+			client:set(v[1]..":carCount", carAmount)
+		end
+		carCounterStopWatch = socket.gettime() + 5
 	end
 end
 
@@ -144,5 +146,5 @@ function love.draw()
 	for k,v in pairs(intersectionsTable) do
 		v:draw()
 	end
-	drawGridIndices()
+	--drawGridIndices()
 end

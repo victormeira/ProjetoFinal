@@ -187,34 +187,22 @@ function Intersection:orderColorChange()
 
     if(currentXColor == "green") then
         self.Crosswalks.xAxis.lightColor = "yellow"
-        client:set(getRedisKeyString(self.id .. "xAxis", "color"), "yellow")
         self:setCrosswalkBlocks("x", true) -- closing the crosswalk
-        --self.nextChange = os.time() + 3
         self.Crosswalks.xAxis.reaffirmClosedCrosswalk = true
-        --print("HERE4")
     elseif (currentYColor == "green") then
         self.Crosswalks.yAxis.lightColor = "yellow"
-        client:set(getRedisKeyString(self.id .. "yAxis", "color"), "green")
         self:setCrosswalkBlocks("y", true) -- closing the crosswalk
-        --self.nextChange = os.time() + 3
         self.Crosswalks.yAxis.reaffirmClosedCrosswalk = true
-        --print("HERE3")
     elseif (currentXColor == "yellow") then
         self.Crosswalks.xAxis.lightColor = "red"
         self.Crosswalks.yAxis.lightColor = "green"
-        client:set(getRedisKeyString(self.id .. "xAxis", "color"), "red")
-        client:set(getRedisKeyString(self.id .. "yAxis", "color"), "green")
         self:setCrosswalkBlocks("y", false) -- opening the crosswalk
         self.Crosswalks.yAxis.reaffirmClosedCrosswalk = false
-        --print("HERE", self.Crosswalks.xAxis.lightColor)
     elseif (currentYColor == "yellow") then
         self.Crosswalks.yAxis.lightColor = "red"
         self.Crosswalks.xAxis.lightColor = "green"
-        client:set(getRedisKeyString(self.id .. "xAxis", "color"), "green")
-        client:set(getRedisKeyString(self.id .. "yAxis", "color"), "red")
         self:setCrosswalkBlocks("x", false) -- opening the crosswalk
         self.Crosswalks.xAxis.reaffirmClosedCrosswalk = false
-        --print("HERE2")
     end
 end
 
