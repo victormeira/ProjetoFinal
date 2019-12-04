@@ -2,7 +2,8 @@
 
 Códigos, relatórios e entregas do Projeto Final de Graduação na PUC-Rio.
 
-##File Structure
+### File Structure
+
 | Nome da Pasta | Descrição |
 | ------ | ----------- |
 | AuxiliaryDocuments   | Documentos auxiliares ao projeto |
@@ -12,6 +13,6 @@ Códigos, relatórios e entregas do Projeto Final de Graduação na PUC-Rio.
 | SystemSimulators   | Simuladores do sistema (primeira e segunda versão). |
 | testOutputs   | Pasta de arquivos de saída de testes. |
 
-##Dependencies
+### Dependencies
 
 Work in Progress
